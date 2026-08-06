@@ -1,14 +1,17 @@
 #include "Loan.h"
 #include <chrono>
+#include <nlohmann/json.hpp>
 
 using namespace std;
+using namespace nlohmann;
 using std::chrono::year_month_day;
 
-Loan::Loan(string name, double principle, double interest_rate, year_month_day date) {
+Loan::Loan(string name, double principle, double interest_rate, year_month_day date, vector<Payment> payments) {
     this->name = name;
     this->principle = principle;
     this->interest_rate = interest_rate;
     this->date = date;
+    this->payments = payments;
 }
 
 string Loan::get_name() const {
@@ -27,11 +30,15 @@ year_month_day Loan::get_date() const {
     return this->date;
 }
 
-void Loan::make_payment(Payment payment) {
+std::vector<Payment> Loan::get_payments() const {
+    return this->payments;
+}
+
+void Loan::make_payment(const Payment payment) {
 
     // Iterator finds the first payment in the vector with a later date,
     // so 'payment' can be placed in the vector and keep it sorted
-    const auto iterator = upper_bound(payments.begin(), payments.end(), payment,
+    const auto iterator = ranges::upper_bound(payments, payment,
         [](const Payment &a, const Payment &b) {
             return a.get_date() < b.get_date();
         });
@@ -63,7 +70,7 @@ double Loan::get_current_amount() const {
 
     // Accrue the interest between payments, adjusting the current balance according to the interest and payments
     for (const Payment &payment : payments) {
-        long days = days_between(d, payment.get_date());
+        long const days = days_between(d, payment.get_date());
         accrued_interest += balance * daily_interest_rate * days;
 
         double payment_amount = payment.get_amount();
@@ -79,11 +86,54 @@ double Loan::get_current_amount() const {
         d = payment.get_date();
     }
 
-    long remain_days = days_between(d, today());
+    long const remain_days = days_between(d, today());
     accrued_interest += balance * daily_interest_rate * remain_days;
 
     return balance + accrued_interest;
 
+}
+
+// Helper functions for JSON operations
+namespace {
+
+    using namespace std::chrono;
+
+    string date_to_string(const year_month_day& date)  {
+        std::ostringstream oss;
+        oss << std::setfill('0')
+            << std::setw(4) << static_cast<int>(date.year()) << "-"
+            << std::setw(2) << static_cast<unsigned>(date.month()) << "-"
+            << std::setw(2) << static_cast<unsigned>(date.day());
+        return oss.str();
+    }
+
+    year_month_day string_to_date(const string date_string) {
+        int y, m, d;
+        std::sscanf(date_string.c_str(), "%d-%d-%d", &y, &m, &d);
+        return year_month_day(
+            year{y},
+            month{static_cast<unsigned>(m)},
+            day{static_cast<unsigned>(d)});
+    }
+}
+
+void to_json(json& j, const Loan& loan) {
+    j = json{
+        {"name", loan.get_name()},
+        {"principle", loan.get_principle()},
+        {"interest_rate", loan.get_interest_rate()},
+        {"date", date_to_string(loan.get_date())},
+        {"payments", loan.get_payments()},
+    };
+}
+
+void from_json(const json& j, Loan& loan) {
+    const string name = j.at("name").get<string>();
+    const double principle = j.at("principle").get<double>();
+    const double interest_rate = j.at("interest_rate").get<double>();
+    const string date_string = j.at("date").get<string>();
+    const vector<Payment> payments = j.at("payments");
+    loan = Loan(name, principle, interest_rate, string_to_date(date_string), payments);
 }
 
 
