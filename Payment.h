@@ -6,10 +6,12 @@
 
 class Payment {
 public:
+    Payment() = default;
     Payment(float amount, std::chrono::year_month_day date);
 
     float get_amount() const;
     std::chrono::year_month_day get_date() const;
+    std::string toString() const;
 
 private:
     float amount;

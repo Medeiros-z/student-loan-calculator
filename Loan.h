@@ -8,7 +8,8 @@
 
 class Loan {
 public:
-    // Constructor & Destructor
+
+    Loan() = default;
     Loan(std::string name, double principle, double interest_rate, std::chrono::year_month_day date,
         std::vector<Payment> payments);
 
@@ -19,6 +20,7 @@ public:
     std::vector<Payment> get_payments() const;
     void make_payment(Payment payment);
     double get_current_amount() const;
+    std::string toString() const;
 
 private:
     std::string name;

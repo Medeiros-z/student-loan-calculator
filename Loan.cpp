@@ -117,6 +117,20 @@ namespace {
     }
 }
 
+std::string Loan::toString() const {
+    string paymentsString;
+    for (const Payment &payment : payments) {
+        paymentsString += payment.toString() + "\n";
+    }
+    
+    return "Loan: " + this->name + "\n"
+        + "Principle: " + to_string(this->principle) + "\n"
+        + "Interest Rate: " + to_string(this->interest_rate) + "\n"
+        + "Date Taken Out: " + date_to_string(this->date) + "\n"
+        + "Current Amount Owed: " + to_string(this->get_current_amount()) + "\n"
+        + "Payments: \n" + paymentsString;
+}
+
 void to_json(json& j, const Loan& loan) {
     j = json{
         {"name", loan.get_name()},

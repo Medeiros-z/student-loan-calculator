@@ -43,6 +43,10 @@ namespace {
     }
 }
 
+std::string Payment::toString() const {
+    return to_string(this->amount) + date_to_string(this->date);
+}
+
 void to_json(json& j, const Payment& p) {
     j = json{
         {"amount", p.get_amount()},
